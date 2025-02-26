@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Astronomy Portal</title>
+  <style>
+    /* Global Styles & Fullscreen Setup */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, sans-serif;
+    }
+    /* Three.js canvas covers the full screen */
+    #bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    /* Overlay with intro text and buttons on the left */
+    .overlay {
+      position: absolute;
+      top: 50%;
+      left: 5%;
+      transform: translateY(-50%);
+      text-align: left;
+      color: #fff;
+      z-index: 1;
+      max-width: 300px;
+    }
+    .overlay .intro h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+    .overlay .intro p {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    }
+    .overlay .buttons button {
+      background-color: #007BFF;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      margin: 10px 5px 10px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    .overlay .buttons button:hover {
+      background-color: #0056b3;
+    }
+    /* Form containers: hidden by default and slide down when activated */
+    .form-container {
+      background: rgba(34,34,34,0.9);
+      margin: 20px auto;
+      width: 300px;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.5s ease, padding 0.5s ease;
+      border-radius: 8px;
+      padding: 0 20px;
+    }
+    .form-container.active {
+      max-height: 500px;
+      padding: 20px;
+    }
+    .form-container h2 {
+      margin-top: 0;
+      font-size: 1.4em;
+    }
+    .form-container form input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    .form-container form button {
+      background-color: #007BFF;
+      color: #fff;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    .form-container form button:hover {
+      background-color: #0056b3;
+    }
+    .error-message {
+      color: #ff4d4d;
+      display: none;
+      margin-top: 10px;
+    }
+    /* Modal window for object info */
+    #infoModal {
+      display: none;
+      position: fixed;
+      background: rgba(34,34,34,0.95);
+      color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      z-index: 2;
+      max-width: 300px;
+    }
+    #infoModal #modalClose {
+      cursor: pointer;
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Three.js Canvas -->
+  <canvas id="bg"></canvas>
+  
+  <!-- Overlay Content (Intro & Buttons) -->
+  <div class="overlay">
+    <div class="intro">
+      <h1>Welcome to the Astronomy Portal</h1>
+      <p>Explore the wonders of the universe—from our solar system to distant galaxies.</p>
+    </div>
+    <div class="buttons">
+      <button id="loginBtn">Log In</button>
+      <button id="signupBtn">Sign Up</button>
+    </div>
+    <!-- Log In Form -->
+    <div id="loginForm" class="form-container">
+      <h2>Log In</h2>
+      <form id="login-form" action="#" method="POST">
+        <input type="text" id="loginUsername" name="username" placeholder="Username or Email" />
+        <input type="password" id="loginPassword" name="password" placeholder="Password" />
+        <button type="submit">Log In</button>
+        <p id="loginError" class="error-message">Please enter username and password.</p>
+      </form>
+    </div>
+    <!-- Sign Up Form -->
+    <div id="signupForm" class="form-container">
+      <h2>Sign Up</h2>
+      <form id="signup-form" action="#" method="POST">
+        <input type="text" name="username" placeholder="Username" />
+        <input type="email" name="email" placeholder="Email" />
+        <input type="password" name="password" placeholder="Password" />
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Info Modal -->
+  <div id="infoModal">
+    <span id="modalClose">&times;</span>
+    <div id="modalContent"></div>
+  </div>
+  
+  <!-- Three.js and Custom Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ------------------------------
+    // DESCRIPTION DATA
+    // ------------------------------
+    const descriptions = {
+      Mercury: "Mercury: The smallest planet and closest to the Sun.",
+      Venus: "Venus: The second planet, with a thick toxic atmosphere.",
+      Earth: "Earth: Our home planet, with abundant water and life.",
+      Mars: "Mars: The red planet, with a dusty, iron oxide surface.",
+      Jupiter: "Jupiter: The largest planet, a gas giant with a Great Red Spot.",
+      Saturn: "Saturn: Known for its extensive ring system.",
+      Uranus: "Uranus: An ice giant with a unique sideways rotation.",
+      Neptune: "Neptune: An ice giant with supersonic winds.",
+      Moon: "The Moon: Earth's natural satellite.",
+      Europa: "Europa: One of Jupiter's moons, with a potential subsurface ocean."
+    };
+
+    // ------------------------------
+    // SET UP SCENE, CAMERA, RENDERER, AND LIGHTS
+    // ------------------------------
+    const scene = new THREE.Scene();
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 7.5);
+    scene.add(directionalLight);
+    
+    // Top-down camera
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 60, 0);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    
+    const renderer = new THREE.WebGLRenderer({
+      canvas: document.getElementById('bg'),
+      antialias: true,
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // ------------------------------
+    // CREATE SOLAR SYSTEM GROUP (Stationary on the right)
+    // ------------------------------
+    const solarSystem = new THREE.Group();
+    solarSystem.position.x = 20; // placed to the right
+    // Increase the overall scale by 40% relative to the original (original was 0.8, 0.8*1.4 = 1.12)
+    solarSystem.scale.set(1.12, 1.12, 1.12);
+    scene.add(solarSystem);
+    
+    // ------------------------------
+    // TEXTURE LOADER & ASSETS FOR PLANETS
+    // ------------------------------
+    const textureLoader = new THREE.TextureLoader();
+    const planetTextures = {
+      Mercury: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mercury.jpg'),
+      Venus:   textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/venus.jpg'),
+      Earth:   textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'),
+      Mars:    textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/mars_1k_color.jpg'),
+      Jupiter: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/jupiter.jpg'),
+      Saturn:  textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturn.jpg'),
+      Uranus:  textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/uranus.jpg'),
+      Neptune: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/neptune.jpg')
+    };
+    const saturnRingTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/saturnringcolor.jpg');
+    
+    // ------------------------------
+    // CREATE THE SUN
+    // ------------------------------
+    const sunGeometry = new THREE.SphereGeometry(3.5, 32, 32);
+    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    solarSystem.add(sun);
+    
+    // ------------------------------
+    // DEFINE PLANETS DATA (with orbital & rotational periods)
+    // ------------------------------
+    const planetsData = [
+      { name: 'Mercury', size: 0.4, distance: 5, orbitPeriod: 88, rotationPeriod: 1407.5 },
+      { name: 'Venus',   size: 0.7, distance: 7, orbitPeriod: 225, rotationPeriod: 5832, retrograde: true },
+      { name: 'Earth',   size: 0.8, distance: 9, orbitPeriod: 365, rotationPeriod: 24 },
+      { name: 'Mars',    size: 0.6, distance: 11, orbitPeriod: 687, rotationPeriod: 24.6 },
+      { name: 'Jupiter', size: 1.5, distance: 15, orbitPeriod: 4331, rotationPeriod: 9.9 },
+      { name: 'Saturn',  size: 1.2, distance: 19, orbitPeriod: 10747, rotationPeriod: 10.7 },
+      { name: 'Uranus',  size: 1, distance: 23, orbitPeriod: 30589, rotationPeriod: 17.2 },
+      { name: 'Neptune', size: 1, distance: 27, orbitPeriod: 59800, rotationPeriod: 16.1 }
+    ];
+    
+    // Base speeds (for Earth's orbit/rotation)
+    const baseOrbitSpeed = 0.005;
+    const orbitalSpeedFactor = 5;
+    const baseRotationSpeed = 0.02;
+    
+    // Array to hold planet objects (with pivots and speeds)
+    const planetPivots = [];
+    
+    // ------------------------------
+    // CREATE EACH PLANET WITH ORBIT RINGS
+    // ------------------------------
+    planetsData.forEach((planet, index) => {
+      // Compute orbit speed; for the first three, slow them further (multiply by 0.3)
+      let orbitSpeed = baseOrbitSpeed * (365 / planet.orbitPeriod) * orbitalSpeedFactor;
+      if(index < 3) { 
+        orbitSpeed *= 0.3; 
+      }
+      
+      // Compute axial rotation speed; also slow down the first three by 50%
+      let rotationSpeed = baseRotationSpeed * (24 / planet.rotationPeriod);
+      if (planet.retrograde) { rotationSpeed = -rotationSpeed; }
+      if(index < 3) { rotationSpeed *= 0.5; }
+      
+      // Create a pivot for orbit
+      const pivot = new THREE.Object3D();
+      solarSystem.add(pivot);
+      
+      // Create the planet sphere with texture, scaling the size by 1.4 (40% larger)
+      const geometry = new THREE.SphereGeometry(planet.size * 1.4, 32, 32);
+      const material = new THREE.MeshPhongMaterial({ map: planetTextures[planet.name] });
+      const mesh = new THREE.Mesh(geometry, material);
+      // Set userData for click detection and info modal
+      mesh.userData = { type: 'planet', name: planet.name, description: descriptions[planet.name], frozen: false };
+      mesh.position.x = planet.distance;
+      
+      // For Saturn, add a textured ring (scaled by 1.4 as well)
+      if (planet.name === 'Saturn') {
+        const ringGeometry = new THREE.RingGeometry(planet.size * 1.2 * 1.4, planet.size * 1.8 * 1.4, 32);
+        const ringMaterial = new THREE.MeshPhongMaterial({ 
+          map: saturnRingTexture, 
+          side: THREE.DoubleSide, 
+          transparent: true 
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = Math.PI / 2;
+        mesh.add(ring);
+      }
+      
+      pivot.add(mesh);
+      // Save speeds for later restoration
+      const item = {
+        pivot,
+        mesh,
+        orbitSpeed,
+        rotationSpeed,
+        originalOrbitSpeed: orbitSpeed,
+        originalRotationSpeed: rotationSpeed
+      };
+      planetPivots.push(item);
+      
+      // Create an orbit ring for visual guidance
+      const orbitGeometry = new THREE.RingGeometry(planet.distance - 0.05, planet.distance + 0.05, 64);
+      const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+      const orbitRing = new THREE.Mesh(orbitGeometry, orbitMaterial);
+      orbitRing.rotation.x = Math.PI / 2;
+      solarSystem.add(orbitRing);
+    });
+    
+    // ------------------------------
+    // ADD MOONS: Earth's Moon and Jupiter's Europa
+    // ------------------------------
+    planetPivots.forEach(item => {
+      if(item.mesh.userData.name === "Earth") {
+        // Create a pivot for Earth's moon and attach to Earth mesh
+        const moonPivot = new THREE.Object3D();
+        item.mesh.add(moonPivot);
+        const moonGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const moonTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg');
+        const moonMaterial = new THREE.MeshPhongMaterial({ map: moonTexture });
+        const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+        moonMesh.position.x = 1.5;  // moon's orbit radius
+        moonMesh.userData = { type: 'moon', name: "Moon", description: descriptions["Moon"], frozen: false };
+        moonPivot.add(moonMesh);
+        // Save the pivot and a chosen orbit speed
+        item.mesh.userData.moonPivot = moonPivot;
+        item.mesh.userData.moonOrbitSpeed = 0.02;  // adjust as needed
+      }
+      if(item.mesh.userData.name === "Jupiter") {
+        // Create a pivot for Europa and attach to Jupiter mesh
+        const europaPivot = new THREE.Object3D();
+        item.mesh.add(europaPivot);
+        const europaGeometry = new THREE.SphereGeometry(0.3, 10, 10);
+        const europaTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg');
+        const europaMaterial = new THREE.MeshPhongMaterial({ map: europaTexture });
+        const europaMesh = new THREE.Mesh(europaGeometry, europaMaterial);
+        europaMesh.position.x = 2.5;  // Europa's orbit radius
+        europaMesh.userData = { type: 'moon', name: "Europa", description: descriptions["Europa"], frozen: false };
+        europaPivot.add(europaMesh);
+        item.mesh.userData.europaPivot = europaPivot;
+        item.mesh.userData.europaOrbitSpeed = 0.02;  // adjust as needed
+      }
+    });
+    
+    // ------------------------------
+    // RAYCASTING & CLICK HANDLING FOR INFO MODAL
+    // ------------------------------
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let selectedPlanet = null;  // to keep track of the frozen object
+    
+    // Helper: climb up the parent chain until an object with userData.type ("planet" or "moon") is found.
+    function getClickableObject(object) {
+      while(object) {
+        if(object.userData && (object.userData.type === "planet" || object.userData.type === "moon")) {
+          return object;
+        }
+        object = object.parent;
+      }
+      return null;
+    }
+    
+    // Event listener for clicks on the renderer's canvas.
+    renderer.domElement.addEventListener('click', (event) => {
+      // Normalize mouse coordinates (-1 to +1)
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if(intersects.length > 0) {
+        const clickable = getClickableObject(intersects[0].object);
+        if(clickable && !clickable.userData.frozen) {
+          // Freeze the object: set its speeds to 0.
+          planetPivots.forEach(item => {
+            if(item.mesh === clickable || item.mesh.getObjectById(clickable.id)) {
+              item.orbitSpeed = 0;
+              item.rotationSpeed = 0;
+              item.mesh.userData.frozen = true;
+              selectedPlanet = item;
+            }
+          });
+          if(clickable.userData.type === "moon") {
+            clickable.userData.frozen = true;
+          }
+          // Convert the 3D intersection point to 2D screen coordinates.
+          const point = intersects[0].point.clone();
+          point.project(camera);
+          const x = (point.x * 0.5 + 0.5) * window.innerWidth;
+          const y = (-point.y * 0.5 + 0.5) * window.innerHeight;
+          // Position the modal near the clicked object (with a small offset)
+          const modal = document.getElementById('infoModal');
+          modal.style.left = (x + 20) + 'px';
+          modal.style.top = (y + 20) + 'px';
+          document.getElementById('modalContent').innerText = clickable.userData.description;
+          modal.style.display = 'block';
+        }
+      }
+    });
+    
+    // Event listener for closing the modal.
+    document.getElementById('modalClose').addEventListener('click', () => {
+      document.getElementById('infoModal').style.display = 'none';
+      if(selectedPlanet) {
+        selectedPlanet.orbitSpeed = selectedPlanet.originalOrbitSpeed;
+        selectedPlanet.rotationSpeed = selectedPlanet.originalRotationSpeed;
+        selectedPlanet.mesh.userData.frozen = false;
+        selectedPlanet = null;
+      }
+    });
+    
+    // ------------------------------
+    // ANIMATION LOOP
+    // ------------------------------
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // Rotate the Sun.
+      sun.rotation.y += 0.002;
+      
+      // Update each planet's orbit and axial rotation (if not frozen).
+      planetPivots.forEach(item => {
+        if(!item.mesh.userData.frozen) {
+          item.pivot.rotation.y += item.orbitSpeed;
+          item.mesh.rotation.y += item.rotationSpeed;
+        }
+        // Animate Earth's Moon if present.
+        if(item.mesh.userData.moonPivot && !item.mesh.userData.moonPivot.userData?.frozen) {
+          item.mesh.userData.moonPivot.rotation.y += item.mesh.userData.moonOrbitSpeed;
+        }
+        // Animate Jupiter's Europa if present.
+        if(item.mesh.userData.europaPivot && !item.mesh.userData.europaPivot.userData?.frozen) {
+          item.mesh.userData.europaPivot.rotation.y += item.mesh.userData.europaOrbitSpeed;
+        }
+      });
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+    
+    // ------------------------------
+    // ADJUST RENDERER & CAMERA ON WINDOW RESIZE
+    // ------------------------------
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // ------------------------------
+    // INTERFACE FUNCTIONALITY: BUTTONS & FORM TOGGLING
+    // ------------------------------
+    function handleButtonClick(formToToggleId, otherFormId) {
+      const formToToggle = document.getElementById(formToToggleId);
+      const otherForm = document.getElementById(otherFormId);
+      if (formToToggle.classList.contains('active')) {
+        formToToggle.classList.remove('active');
+      } else {
+        formToToggle.classList.add('active');
+        if (otherForm) otherForm.classList.remove('active');
+      }
+    }
+    
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      handleButtonClick('loginForm', 'signupForm');
+    });
+    document.getElementById('signupBtn').addEventListener('click', () => {
+      handleButtonClick('signupForm', 'loginForm');
+    });
+    
+    document.getElementById('login-form').addEventListener('submit', event => {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      if (!username || !password) {
+        event.preventDefault();
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
