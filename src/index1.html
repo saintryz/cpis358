@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astronomy Portal</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      /* Recommended: use CSS to set a background image */
+      background-image: url("https://images.pexels.com/photos/1341279/pexels-photo-1341279.jpeg?cs=srgb&dl=pexels-kaip-1341279.jpg&fm=jpg");
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .content {
+      background-color: rgba(0, 0, 0, 0.7); /* adds contrast against background */
+      padding: 20px;
+      margin: 20px;
+    }
+    /* Optional table styling for clarity */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      text-align: left;
+      color: white;
+    }
+    th, td {
+      border: 1px solid white;
+      padding: 10px;
+    }
+    th {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <!-- Headings -->
+    <h2>Welcome to Astronomy Portal</h2>
+
+    <!-- Internal Link to Table -->
+    <p>
+      Use this internal link to jump directly to the table section: 
+      <a href="#astronomy-table" style="color: lightblue;">Go to Astronomy Table</a>
+    </p>
+
+    <!-- Basic Paragraph -->
+    <p>This is a basic paragraph that demonstrates the use of the paragraph tag.</p>
+
+    <!-- Break Tag -->
+    <p>
+      This is the first line.<br>
+      This is the second line after a break.
+    </p>
+
+    <!-- Text Formatting with Bold, Underline, and Italic -->
+    <p>
+      <b>Cosmos</b>, <u>I love astrophysics</u>, and <i>I love physics</i>.
+    </p>
+
+    <!-- Subscript and Superscript -->
+    <p>
+      Chemical formula for water is H<sub>2</sub>O and E = mc<sup>2</sup>.
+    </p>
+
+    <!-- Custom Font with the FONT tag -->
+    <p>
+      <font face="Courier New" size="4" color="yellow">1+1=2</font>
+    </p>
+
+    <!-- Ordered List -->
+    <h3>Top 5 Astronomy Facts (Ordered List)</h3>
+    <ol>
+      <li>The universe is approximately 13.8 billion years old.</li>
+      <li>Our Milky Way is one of billions of galaxies.</li>
+      <li>Black holes have such strong gravity that nothing can escape.</li>
+      <li>Stars are born in vast clouds of gas and dust.</li>
+      <li>The speed of light is about 299,792 kilometers per second.</li>
+    </ol>
+
+    <!-- Unordered List -->
+    <h3>Explore More Topics (Unordered List)</h3>
+    <ul>
+      <li>Planets</li>
+      <li>Stars</li>
+      <li>Galaxies</li>
+      <li>Cosmology</li>
+    </ul>
+
+    <!-- Hypertext Link -->
+    <p>
+      For more exciting astronomy content, visit 
+      <a href="https://www.nasa.gov" target="_blank" style="color: lightblue;">NASA's official website</a>.
+    </p>
+
+    <!-- Embedded Image -->
+    <h3>Featured Astronomical Image</h3>
+    <img src="https://images.pexels.com/photos/110854/pexels-photo-110854.jpeg?cs=srgb&dl=pexels-italo-melo-110854.jpg&fm=jpg" 
+         alt="Astronomy Image" width="600" style="display: block; margin: auto;">
+
+    <!-- Complex Nested Structure Example -->
+    <div style="border: 1px solid white; padding: 10px; margin-top: 20px;">
+      <h4>Did You Know?</h4>
+      <p>Astronomers often use <strong>telescopes</strong> and <em>advanced instruments</em> to study the cosmos. Below is a nested list:</p>
+      <ul>
+        <li>Optical Telescopes
+          <ul>
+            <li>Reflecting telescopes</li>
+            <li>Refracting telescopes</li>
+          </ul>
+        </li>
+        <li>Radio Telescopes</li>
+        <li>Space Telescopes</li>
+      </ul>
+    </div>
+
+    <!-- Internal Link Target -->
+    <h3 id="astronomy-table" style="margin-top: 40px;">Astronomy Data Table</h3>
+    <p>This table demonstrates various attributes of <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, and <code>&lt;td&gt;</code> including <strong>colspan</strong> and <strong>rowspan</strong> for complex structures.</p>
+    
+    <!-- Table with changed attributes -->
+    <table>
+      <tr>
+        <th>Celestial Object</th>
+        <th>Approx. Distance</th>
+        <th>Fact 1</th>
+        <th>Fact 2</th>
+      </tr>
+      <tr>
+        <td>Moon</td>
+        <td>384,400 km</td>
+        <td>Natural satellite of Earth</td>
+        <td>Has phases visible from Earth</td>
+      </tr>
+      <!-- Example of row span and col span -->
+      <tr>
+        <td rowspan="2">Sun</td>
+        <td colspan="3">Center of the Solar System</td>
+      </tr>
+      <tr>
+        <!-- The same 'Sun' cell spans 2 rows above -->
+        <td colspan="3">Surface Temp ~5,778 K; Mass ~1.989 × 10<sup>30</sup> kg</td>
+      </tr>
+      <tr>
+        <td>Mars</td>
+        <td>54.6 million km</td>
+        <td>The Red Planet</td>
+        <td>Potential site for future exploration</td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>
